@@ -1,11 +1,14 @@
-<div align="center">
+# Träningsnärvaro Göteborg Sim
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Enkel och snabb mobilapplikation för träningsnärvaro.
 
-  <h1>Built with AI Studio</h2>
-
-  <p>The fastest path from prompt to production with Gemini.</p>
-
-  <a href="https://aistudio.google.com/apps">Start building</a>
-
-</div>
+## Översikt
+- **Source of Truth:** Google Sheet är master för all närvarodata och medlemshantering.
+- **Miljö:** Körs som en standalone webbapplikation via Google Apps Script `HtmlService`.
+- **Kommunikation:** Backendanrop sker uteslutande via `google.script.run`.
+- **Aktuell status:** Versionen är helt read-only (Steg 1 och Steg 2 klara).
+  - Steg 1: Mobilanpassad snabb närvarovy (Idag / Igår / 2 dagar sedan, Askim / Valhalla, touchvänliga rader, diskret kontrollräkning).
+  - Steg 2: Diskret kugghjul som navigerar till administration (placeholder, inga skrivfunktioner).
+  - Steg 3: `saveAttendance()` är ännu **inte** implementerat i frontend.
+- **Filer:**
+  - `Index.html`: Fristående Apps Script-fil med HTML, CSS och JavaScript i ett, redo att klistras in i Google Apps Script.

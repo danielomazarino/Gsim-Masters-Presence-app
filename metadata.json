@@ -1,0 +1,6 @@
+{
+  "name": "Närvaro Göteborg Sim",
+  "description": "Mobil träningsnärvaro för Göteborg Sim kopplad till Google Sheet.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
