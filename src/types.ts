@@ -7,12 +7,16 @@ declare global {
           withSuccessHandler: (callback: (result: unknown) => void) => {
             withFailureHandler: (callback: (error: Error | { message?: string }) => void) => {
               getAttendanceData: () => void;
+              saveAttendance: (date: string, location: string, attendance: unknown) => void;
+              deleteTrainingColumn: (date: string, location: string) => void;
               [key: string]: unknown;
             };
           };
           withFailureHandler: (callback: (error: Error | { message?: string }) => void) => {
             withSuccessHandler: (callback: (result: unknown) => void) => {
               getAttendanceData: () => void;
+              saveAttendance: (date: string, location: string, attendance: unknown) => void;
+              deleteTrainingColumn: (date: string, location: string) => void;
               [key: string]: unknown;
             };
           };
