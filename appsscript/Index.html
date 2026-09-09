@@ -588,6 +588,14 @@
         font-size: 11px;
         font-weight: 600;
         color: #334155;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+        padding: 0 4px;
+      }
+      .pay-admin-chip.active {
+        background-color: #dbeafe;
+        border-color: #2563eb;
+        color: #1d4ed8;
       }
       .pay-admin-chip .pay-badge {
         width: 12px;
@@ -745,7 +753,7 @@
             </svg>
             <span>
               Öppna Google Sheet
-              <span class="sheet-link-sub">Ändra betalstatus via färgmarkeringar i kolumn A</span>
+              <span class="sheet-link-sub">Ändra betalstatus via färgerna i kolumn A</span>
             </span>
           </a>
         </div>
@@ -753,17 +761,16 @@
         <div class="admin-card">
           <div class="admin-section-title">Betalstatus</div>
           <p class="admin-desc">
-            Grön = har betalat, rödmarkering i Google Sheet = tränat men ej betald. Ändra färgmarkeringarna i Google Sheet (länken ovan) — här visas aktuell status.
+            Tryck på en grupp nedan för att filtrera listan. Färgerna ändras i Google Sheet (länken ovan).
           </p>
           <div id="payAdminSummary" class="pay-admin-summary"></div>
-          <div id="payAdminUnsaved" class="pay-admin-unsaved">Ändringar är inte sparade — de uppdateras i Google Sheet manuellt.</div>
           <div id="payAdminList" class="pay-admin-list"></div>
         </div>
 
         <div class="admin-card">
           <div class="admin-section-title">Träningspass</div>
           <p class="admin-desc">
-            De senaste träningspassen i Google Sheet. Felaktigt skapade pass kan tas bort permanent härifrån.
+            De senaste träningspassen. Felaktiga pass tas bort permanent härifrån.
           </p>
 
           <div id="adminTrainingList" class="admin-training-list"></div>
@@ -1218,9 +1225,16 @@
         legendBox.style.display = "flex";
       }
 
+      var payAdminFilter = null; // null = show all, or "paid" | "owes" | "none"
+
       function getPaymentStatus(memberName) {
         if (!backendPayload || !backendPayload.paymentStatus) return "none";
         return backendPayload.paymentStatus[memberName] || "none";
+      }
+
+      function setPayAdminFilter(status) {
+        payAdminFilter = (payAdminFilter === status) ? null : status;
+        renderPayAdmin();
       }
 
       function renderSheetLink() {
@@ -1252,13 +1266,35 @@
           counts[getPaymentStatus(m.name)]++;
         });
 
-        summaryContainer.innerHTML =
-          '<div class="pay-admin-chip"><span class="pay-badge paid"></span>Har betalat: ' + counts.paid + '</div>' +
-          '<div class="pay-admin-chip"><span class="pay-badge owes"></span>Tränat, ej betald: ' + counts.owes + '</div>' +
-          '<div class="pay-admin-chip"><span class="pay-badge" style="background-color:#e2e8f0;"></span>Övriga: ' + counts.none + '</div>';
+        // Clickable filter chips: tap once to filter, tap again to clear
+        var chipDefs = [
+          { status: "paid", cls: "paid", label: "Har betalat", count: counts.paid },
+          { status: "owes", cls: "owes", label: "Ej betald", count: counts.owes },
+          { status: "none", cls: null, label: "—", count: counts.none }
+        ];
 
+        chipDefs.forEach(function(def) {
+          var chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "pay-admin-chip" + (payAdminFilter === def.status ? " active" : "");
+          chip.setAttribute("aria-pressed", payAdminFilter === def.status ? "true" : "false");
+          chip.onclick = function() { setPayAdminFilter(def.status); };
+
+          var dot = document.createElement("span");
+          dot.className = "pay-badge" + (def.cls ? " " + def.cls : "");
+          if (!def.cls) dot.style.backgroundColor = "#e2e8f0";
+          chip.appendChild(dot);
+          chip.appendChild(document.createTextNode(def.label + ": " + def.count));
+
+          summaryContainer.appendChild(chip);
+        });
+
+        var shown = 0;
         members.forEach(function(m) {
           var status = getPaymentStatus(m.name);
+          if (payAdminFilter && status !== payAdminFilter) return;
+          shown++;
+
           var item = document.createElement("div");
           item.className = "pay-admin-item";
 
@@ -1278,6 +1314,13 @@
           item.appendChild(label);
           listContainer.appendChild(item);
         });
+
+        if (shown === 0) {
+          var emptyDiv = document.createElement("div");
+          emptyDiv.className = "empty-state";
+          emptyDiv.innerText = "Inga medlemmar i den här gruppen.";
+          listContainer.appendChild(emptyDiv);
+        }
       }
 
       function toggleAttendance(memberName) {
