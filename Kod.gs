@@ -1495,7 +1495,7 @@ function doGet(e) {
       "Index"
     )
     .setTitle(
-      "Option B – POC"
+      "Träningsnärvaro Göteborg Sim"
     )
     .addMetaTag(
       "viewport",

@@ -375,6 +375,10 @@
         display: flex;
         flex-direction: column;
         gap: 6px;
+        /* ~4 visible rows, scroll for older passes */
+        max-height: 248px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
       .admin-training-item {
         display: flex;
@@ -595,7 +599,8 @@
         display: flex;
         flex-direction: column;
         gap: 6px;
-        max-height: 320px;
+        /* ~4 visible rows: keeps the Träningspass card reachable on iPhone */
+        max-height: 232px;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
       }
@@ -740,7 +745,7 @@
             </svg>
             <span>
               Öppna Google Sheet
-              <span class="sheet-link-sub">Administrera betalstatus via färgmarkeringar i kolumn A</span>
+              <span class="sheet-link-sub">Ändra betalstatus via färgmarkeringar i kolumn A</span>
             </span>
           </a>
         </div>
@@ -748,17 +753,17 @@
         <div class="admin-card">
           <div class="admin-section-title">Betalstatus</div>
           <p class="admin-desc">
-            Grön = har betalat, rödmarkering i Sheet = tränat men ej betald. Ändra färger i Google Sheet (länken ovan) — här visas aktuell status.
+            Grön = har betalat, rödmarkering i Google Sheet = tränat men ej betald. Ändra färgmarkeringarna i Google Sheet (länken ovan) — här visas aktuell status.
           </p>
           <div id="payAdminSummary" class="pay-admin-summary"></div>
-          <div id="payAdminUnsaved" class="pay-admin-unsaved">Ändringar är inte sparade — de uppdateras i Sheeten manuellt.</div>
+          <div id="payAdminUnsaved" class="pay-admin-unsaved">Ändringar är inte sparade — de uppdateras i Google Sheet manuellt.</div>
           <div id="payAdminList" class="pay-admin-list"></div>
         </div>
 
         <div class="admin-card">
           <div class="admin-section-title">Träningspass</div>
           <p class="admin-desc">
-            Befintliga träningskolumner i Google Sheet. Felaktigt skapade kolumner kan tas bort permanent härifrån.
+            De senaste träningspassen i Google Sheet. Felaktigt skapade pass kan tas bort permanent härifrån.
           </p>
 
           <div id="adminTrainingList" class="admin-training-list"></div>
@@ -1019,10 +1024,21 @@
         if (cols.length === 0) {
           var emptyDiv = document.createElement("div");
           emptyDiv.className = "empty-state";
-          emptyDiv.innerText = "Inga registrerade träningskolumner hittades.";
+          emptyDiv.innerText = "Inga registrerade träningspass hittades.";
           container.appendChild(emptyDiv);
           return;
         }
+
+        // Newest first: sort by real date (day/month), then location —
+        // so the most recent passes are at the top of the scroll list.
+        cols = cols.slice().sort(function(a, b) {
+          var pa = a.date.split("/");
+          var pb = b.date.split("/");
+          var da = new Date(2000 + (pa[1] >= 8 ? 0 : 1), pa[1] - 1, pa[0]);
+          var db = new Date(2000 + (pb[1] >= 8 ? 0 : 1), pb[1] - 1, pb[0]);
+          if (db - da !== 0) return db - da;
+          return String(a.location).localeCompare(String(b.location));
+        });
 
         cols.forEach(function(col) {
           var item = document.createElement("div");
@@ -1237,8 +1253,8 @@
         });
 
         summaryContainer.innerHTML =
-          '<div class="pay-admin-chip"><span class="pay-badge paid"></span>Betald: ' + counts.paid + '</div>' +
-          '<div class="pay-admin-chip"><span class="pay-badge owes"></span>Ej betald: ' + counts.owes + '</div>' +
+          '<div class="pay-admin-chip"><span class="pay-badge paid"></span>Har betalat: ' + counts.paid + '</div>' +
+          '<div class="pay-admin-chip"><span class="pay-badge owes"></span>Tränat, ej betald: ' + counts.owes + '</div>' +
           '<div class="pay-admin-chip"><span class="pay-badge" style="background-color:#e2e8f0;"></span>Övriga: ' + counts.none + '</div>';
 
         members.forEach(function(m) {
@@ -1256,7 +1272,7 @@
 
           var label = document.createElement("span");
           label.className = "pay-cycle-btn";
-          label.innerText = status === "paid" ? "Betald" : status === "owes" ? "Ej betald" : "—";
+          label.innerText = status === "paid" ? "Har betalat" : status === "owes" ? "Ej betald" : "—";
 
           item.appendChild(nameDiv);
           item.appendChild(label);
