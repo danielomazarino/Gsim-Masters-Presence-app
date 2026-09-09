@@ -578,10 +578,12 @@
       .pay-admin-chip {
         flex: 1;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        gap: 6px;
-        min-height: 36px;
+        justify-content: flex-start;
+        gap: 3px;
+        min-height: 52px;
+        padding: 8px 4px 6px;
         background-color: #f8fafc;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
@@ -590,7 +592,12 @@
         color: #334155;
         cursor: pointer;
         transition: background-color 0.15s ease, border-color 0.15s ease;
-        padding: 0 4px;
+      }
+      .pay-admin-chip .chip-count {
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1;
+        color: #0f172a;
       }
       .pay-admin-chip.active {
         background-color: #dbeafe;
@@ -1272,7 +1279,6 @@
           { status: "owes", cls: "owes", label: "Ej betald", count: counts.owes },
           { status: "none", cls: null, label: "—", count: counts.none }
         ];
-
         chipDefs.forEach(function(def) {
           var chip = document.createElement("button");
           chip.type = "button";
@@ -1284,7 +1290,15 @@
           dot.className = "pay-badge" + (def.cls ? " " + def.cls : "");
           if (!def.cls) dot.style.backgroundColor = "#e2e8f0";
           chip.appendChild(dot);
-          chip.appendChild(document.createTextNode(def.label + ": " + def.count));
+
+          var count = document.createElement("span");
+          count.className = "chip-count";
+          count.innerText = String(def.count);
+          chip.appendChild(count);
+
+          var label = document.createElement("span");
+          label.innerText = def.label;
+          chip.appendChild(label);
 
           summaryContainer.appendChild(chip);
         });
