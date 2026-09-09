@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="sv">
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Träningsnärvaro Göteborg Sim</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: #f1f5f9;
+        color: #0f172a;
+        user-select: none;
+        -webkit-user-select: none;
+        padding-bottom: 40px;
+      }
+      .header-sticky {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        background-color: #ffffff;
+        border-bottom: 1px solid #e2e8f0;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      }
+      .control-container {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .row-dates {
+        display: flex;
+        gap: 6px;
+      }
+      .date-btn {
+        flex: 1;
+        min-height: 44px;
+        padding: 6px 4px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        font-size: 12px;
+        font-weight: 500;
+        background-color: #f1f5f9;
+        color: #334155;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.2;
+      }
+      .date-btn.active {
+        background-color: #2563eb;
+        color: #ffffff;
+        font-weight: 600;
+      }
+      .date-btn-sub {
+        font-size: 10px;
+        margin-top: 2px;
+        color: #94a3b8;
+      }
+      .date-btn.active .date-btn-sub {
+        color: #bfdbfe;
+      }
+      .row-controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .locations-group {
+        display: flex;
+        gap: 6px;
+        flex: 1;
+        min-width: 0;
+      }
+      .loc-btn {
+        flex: 1;
+        min-height: 44px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        font-size: 13px;
+        font-weight: 600;
+        background-color: #f1f5f9;
+        color: #334155;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .loc-btn.active {
+        background-color: #2563eb;
+        color: #ffffff;
+      }
+      .checksum-badge {
+        min-height: 44px;
+        padding: 0 12px;
+        background-color: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 600;
+        color: #1e293b;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .checksum-badge span {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 14px;
+        font-weight: 700;
+        color: #2563eb;
+        margin-left: 4px;
+      }
+      .save-btn {
+        min-height: 44px;
+        padding: 0 14px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        background-color: #2563eb;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        transition: background-color 0.15s ease;
+        flex-shrink: 0;
+      }
+      .save-btn:disabled {
+        background-color: #94a3b8;
+        cursor: not-allowed;
+      }
+      .save-btn.saved {
+        background-color: #059669;
+      }
+      .admin-cog-btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        background-color: #f1f5f9;
+        color: #475569;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .admin-cog-btn:active {
+        background-color: #e2e8f0;
+      }
+      .admin-cog-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+      /* Compact header controls on narrow screens: prevents the admin cog
+         from overflowing the viewport and causing a horizontal scrollbar. */
+      @media (max-width: 420px) {
+        .row-controls {
+          gap: 6px;
+        }
+        .loc-btn {
+          padding: 8px 6px;
+          font-size: 12px;
+        }
+        .checksum-badge {
+          padding: 0 8px;
+          font-size: 11px;
+        }
+        .checksum-badge span {
+          font-size: 12px;
+        }
+        .save-btn {
+          padding: 0 10px;
+          font-size: 12px;
+        }
+      }
+      .admin-header-bar {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .back-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #2563eb;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        min-height: 44px;
+        padding: 0 8px;
+        border-radius: 8px;
+      }
+      .back-btn:active {
+        background-color: #eff6ff;
+      }
+      .back-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+      .admin-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1e293b;
+      }
+      .main-content {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 10px;
+      }
+      .status-box {
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        margin-bottom: 10px;
+        display: none;
+      }
+      .status-box.error {
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+        display: block;
+      }
+      .status-box.loading {
+        background-color: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e40af;
+        display: block;
+        text-align: center;
+      }
+      .status-box.success {
+        background-color: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+        display: block;
+        text-align: center;
+      }
+      .training-notice {
+        font-size: 12px;
+        color: #64748b;
+        background-color: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin-bottom: 10px;
+        text-align: center;
+        display: none;
+      }
+      .member-list {
+        background-color: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      }
+      .member-row {
+        width: 100%;
+        min-height: 50px;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: #ffffff;
+        border: none;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        text-align: left;
+        touch-action: manipulation;
+        transition: background-color 0.1s ease;
+      }
+      .member-row:last-child {
+        border-bottom: none;
+      }
+      .member-row:active {
+        background-color: #f8fafc;
+      }
+      .member-row.is-present {
+        background-color: #ecfdf5;
+      }
+      .member-name {
+        font-size: 14px;
+        color: #1e293b;
+        font-weight: 400;
+        padding-right: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+      .member-row.is-present .member-name {
+        font-weight: 600;
+        color: #064e3b;
+      }
+      .checkbox-indicator {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        border: 1px solid #cbd5e1;
+        background-color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        pointer-events: none;
+      }
+      .member-row.is-present .checkbox-indicator {
+        background-color: #059669;
+        border-color: #059669;
+        color: #ffffff;
+      }
+      .checkmark-icon {
+        display: none;
+        width: 16px;
+        height: 16px;
+        stroke: #ffffff;
+        stroke-width: 3;
+        fill: none;
+      }
+      .member-row.is-present .checkmark-icon {
+        display: block;
+      }
+      .empty-state {
+        padding: 30px 20px;
+        text-align: center;
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        font-size: 13px;
+        color: #64748b;
+      }
+      .admin-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        padding: 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        margin-bottom: 12px;
+      }
+      .admin-section-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        margin-bottom: 8px;
+      }
+      .admin-desc {
+        font-size: 12px;
+        color: #475569;
+        line-height: 1.4;
+        margin-bottom: 14px;
+      }
+      .admin-training-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .admin-training-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+      }
+      .admin-training-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .admin-training-header {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
+      }
+      .admin-delete-btn {
+        min-height: 36px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #fecaca;
+        background-color: #ffffff;
+        color: #dc2626;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.1s ease;
+      }
+      .admin-delete-btn:active {
+        background-color: #fee2e2;
+      }
+      .admin-delete-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(15, 23, 42, 0.5);
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      .modal-box {
+        background-color: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        max-width: 360px;
+        width: 100%;
+        padding: 18px;
+      }
+      .modal-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 6px;
+      }
+      .modal-target-badge {
+        display: inline-block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #dc2626;
+        background-color: #fef2f2;
+        border: 1px solid #fee2e2;
+        padding: 4px 8px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+      }
+      .modal-body {
+        font-size: 12px;
+        color: #475569;
+        line-height: 1.4;
+        margin-bottom: 16px;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      .modal-cancel-btn {
+        min-height: 40px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        background-color: #ffffff;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .modal-confirm-btn {
+        min-height: 40px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        background-color: #dc2626;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .modal-confirm-btn:disabled {
+        background-color: #f87171;
+        cursor: not-allowed;
+      }
+      /* Payment status badge: small colored card left of the tick box */
+      .pay-badge {
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
+        flex-shrink: 0;
+        margin-right: 2px;
+        pointer-events: none;
+      }
+      .pay-badge.paid {
+        background-color: #6aa84f;
+      }
+      .pay-badge.owes {
+        background-color: #f59e0b;
+      }
+      .pay-legend {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        padding: 8px 12px;
+        margin-bottom: 10px;
+        font-size: 11px;
+        color: #64748b;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+      }
+      .pay-legend .pay-badge {
+        display: inline-block;
+        vertical-align: -4px;
+        margin-right: 5px;
+      }
+      /* Admin: Google Sheet link card */
+      .sheet-link-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        margin-bottom: 12px;
+        overflow: hidden;
+      }
+      .sheet-link-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        min-height: 52px;
+        padding: 12px 16px;
+        background: #ffffff;
+        border: none;
+        cursor: pointer;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        color: #2563eb;
+        text-decoration: none;
+      }
+      .sheet-link-row:active {
+        background-color: #eff6ff;
+      }
+      .sheet-link-row svg {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+      }
+      .sheet-link-sub {
+        display: block;
+        font-size: 11px;
+        font-weight: 400;
+        color: #64748b;
+        margin-top: 2px;
+      }
+      /* Admin: payment status list */
+      .pay-admin-summary {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .pay-admin-chip {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 36px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #334155;
+      }
+      .pay-admin-chip .pay-badge {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        margin: 0;
+      }
+      .pay-admin-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 320px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .pay-admin-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 12px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+      }
+      .pay-admin-name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #1e293b;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .pay-admin-name .pay-badge {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        margin: 0;
+      }
+      .pay-cycle-btn {
+        min-height: 32px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        background-color: #ffffff;
+        color: #334155;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+      .pay-cycle-btn:active {
+        background-color: #e2e8f0;
+      }
+      .pay-admin-unsaved {
+        font-size: 11px;
+        color: #b45309;
+        background-color: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin-bottom: 10px;
+        display: none;
+      }
+      .pay-admin-unsaved.visible {
+        display: block;
+      }
+      .pay-admin-save-btn {
+        width: 100%;
+        min-height: 44px;
+        margin-top: 10px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        background-color: #2563eb;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .pay-admin-save-btn:disabled {
+        background-color: #94a3b8;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header-sticky">
+      <div id="attendanceControls" class="control-container">
+        <div class="row-dates" id="dateButtonsContainer"></div>
+
+        <div class="row-controls">
+          <div class="locations-group">
+            <button type="button" class="loc-btn active" id="btnAskim" onclick="selectLocation('Askim')">
+              Askim
+            </button>
+            <button type="button" class="loc-btn" id="btnValhalla" onclick="selectLocation('Valhalla')">
+              Valhalla
+            </button>
+          </div>
+
+          <div class="checksum-badge">
+            Närvarande: <span id="checksumCount">0</span>
+          </div>
+
+          <button type="button" class="save-btn" id="saveBtn" onclick="saveAttendanceData()">
+            Spara
+          </button>
+
+          <button type="button" class="admin-cog-btn" onclick="showAdminView()" aria-label="Administration" title="Administration">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="adminHeader" class="admin-header-bar" style="display: none;">
+        <button type="button" class="back-btn" onclick="showAttendanceView()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span>Tillbaka</span>
+        </button>
+        <span class="admin-title">Administration</span>
+        <div style="width: 60px;"></div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div id="attendanceView">
+        <div id="statusBox" class="status-box"></div>
+        <div id="trainingNotice" class="training-notice"></div>
+        <div id="payLegend" class="pay-legend" style="display: none;">
+          <span><span class="pay-badge paid"></span>Har betalat</span>
+          <span><span class="pay-badge owes"></span>Tränat, ej betald</span>
+        </div>
+        <div id="memberList" class="member-list"></div>
+      </div>
+
+      <div id="adminView" style="display: none;">
+        <div id="adminStatusBox" class="status-box"></div>
+
+        <div class="sheet-link-card">
+          <a id="openSheetLink" class="sheet-link-row" href="#" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="8" y1="13" x2="16" y2="13"></line>
+              <line x1="8" y1="17" x2="16" y2="17"></line>
+            </svg>
+            <span>
+              Öppna Google Sheet
+              <span class="sheet-link-sub">Administrera betalstatus via färgmarkeringar i kolumn A</span>
+            </span>
+          </a>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-section-title">Betalstatus</div>
+          <p class="admin-desc">
+            Grön = har betalat, rödmarkering i Sheet = tränat men ej betald. Ändra färger i Google Sheet (länken ovan) — här visas aktuell status.
+          </p>
+          <div id="payAdminSummary" class="pay-admin-summary"></div>
+          <div id="payAdminUnsaved" class="pay-admin-unsaved">Ändringar är inte sparade — de uppdateras i Sheeten manuellt.</div>
+          <div id="payAdminList" class="pay-admin-list"></div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-section-title">Träningspass</div>
+          <p class="admin-desc">
+            Befintliga träningskolumner i Google Sheet. Felaktigt skapade kolumner kan tas bort permanent härifrån.
+          </p>
+
+          <div id="adminTrainingList" class="admin-training-list"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Confirmation Modal for Delete -->
+    <div id="deleteModal" class="modal-backdrop" style="display: none;">
+      <div class="modal-box">
+        <div class="modal-title">Ta bort träningspass?</div>
+        <div id="modalTargetHeader" class="modal-target-badge"></div>
+        <div class="modal-body">
+          Detta tar bort hela kolumnen och all registrerad närvaro i den.
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="modal-cancel-btn" id="modalCancelBtn" onclick="closeDeleteModal()">
+            Avbryt
+          </button>
+          <button type="button" class="modal-confirm-btn" id="modalConfirmBtn" onclick="confirmDeleteTraining()">
+            Ta bort
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      var dateOptions = [];
+      var selectedDateFormatted = "";
+      var selectedLocation = "Askim";
+      var backendPayload = null;
+      var localAttendance = {};
+      var isLoading = false;
+      var isSaving = false;
+      var isDeleting = false;
+      var currentView = "attendance";
+      var pendingDeleteTarget = null; // { date: string, location: string, header: string }
+
+      function showAdminView() {
+        currentView = "admin";
+        document.getElementById("attendanceControls").style.display = "none";
+        document.getElementById("adminHeader").style.display = "flex";
+        document.getElementById("attendanceView").style.display = "none";
+        document.getElementById("adminView").style.display = "block";
+        renderSheetLink();
+        renderPayAdmin();
+        renderAdminTrainingList();
+      }
+
+      function showAttendanceView() {
+        currentView = "attendance";
+        document.getElementById("attendanceControls").style.display = "flex";
+        document.getElementById("adminHeader").style.display = "none";
+        document.getElementById("attendanceView").style.display = "block";
+        document.getElementById("adminView").style.display = "none";
+      }
+
+      function initDateOptions() {
+        var now = new Date();
+
+        function formatDate(d) {
+          return d.getDate() + "/" + (d.getMonth() + 1);
+        }
+
+        var today = new Date(now);
+        var yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        var twoDaysAgo = new Date(now);
+        twoDaysAgo.setDate(now.getDate() - 2);
+
+        dateOptions = [
+          { id: "today", label: "Idag", formatted: formatDate(today) },
+          { id: "yesterday", label: "Igår", formatted: formatDate(yesterday) },
+          { id: "two_days_ago", label: "2 dagar sedan", formatted: formatDate(twoDaysAgo) }
+        ];
+
+        selectedDateFormatted = dateOptions[0].formatted;
+        renderDateButtons();
+      }
+
+      function renderDateButtons() {
+        var container = document.getElementById("dateButtonsContainer");
+        container.innerHTML = "";
+
+        dateOptions.forEach(function(opt) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "date-btn" + (selectedDateFormatted === opt.formatted ? " active" : "");
+          btn.disabled = isSaving;
+          btn.onclick = function() { selectDate(opt.formatted); };
+
+          var labelSpan = document.createElement("span");
+          labelSpan.innerText = opt.label;
+
+          var subSpan = document.createElement("span");
+          subSpan.className = "date-btn-sub";
+          subSpan.innerText = opt.formatted;
+
+          btn.appendChild(labelSpan);
+          btn.appendChild(subSpan);
+          container.appendChild(btn);
+        });
+      }
+
+      function selectDate(formattedDate) {
+        if (isSaving || selectedDateFormatted === formattedDate) return;
+        selectedDateFormatted = formattedDate;
+        renderDateButtons();
+        recomputeLocalAttendanceFromBackend();
+      }
+
+      function selectLocation(loc) {
+        if (isSaving || selectedLocation === loc) return;
+        selectedLocation = loc;
+        document.getElementById("btnAskim").className = "loc-btn" + (loc === "Askim" ? " active" : "");
+        document.getElementById("btnValhalla").className = "loc-btn" + (loc === "Valhalla" ? " active" : "");
+        recomputeLocalAttendanceFromBackend();
+      }
+
+      function fetchAttendanceData(onComplete) {
+        if (isLoading) return;
+
+        var statusBox = document.getElementById("statusBox");
+        if (!isSaving && currentView === "attendance") {
+          statusBox.className = "status-box loading";
+          statusBox.innerText = "Hämtar medlemmar från kalkylarket...";
+        }
+        isLoading = true;
+
+        if (typeof google === "undefined" || !google.script || !google.script.run) {
+          isLoading = false;
+          statusBox.className = "status-box error";
+          statusBox.innerText = "google.script.run är inte tillgängligt i denna miljö. Denna sida måste köras som Google Apps Script Web App.";
+          if (onComplete) onComplete(false);
+          return;
+        }
+
+        google.script.run
+          .withSuccessHandler(function(data) {
+            isLoading = false;
+            if (!isSaving) {
+              statusBox.style.display = "none";
+              statusBox.className = "status-box";
+            }
+            backendPayload = data || {};
+            recomputeLocalAttendanceFromBackend();
+            if (currentView === "admin") {
+              renderAdminTrainingList();
+            }
+            if (onComplete) onComplete(true);
+          })
+          .withFailureHandler(function(error) {
+            isLoading = false;
+            statusBox.className = "status-box error";
+            statusBox.innerText = "Kunde inte hämta data: " + (error.message || String(error));
+            if (onComplete) onComplete(false);
+          })
+          .getAttendanceData();
+      }
+
+      function saveAttendanceData() {
+        if (isSaving || isLoading) return;
+
+        var statusBox = document.getElementById("statusBox");
+        var saveBtn = document.getElementById("saveBtn");
+
+        if (typeof google === "undefined" || !google.script || !google.script.run) {
+          statusBox.className = "status-box error";
+          statusBox.innerText = "google.script.run är inte tillgängligt i denna miljö.";
+          return;
+        }
+
+        isSaving = true;
+        saveBtn.disabled = true;
+        saveBtn.innerText = "Sparar…";
+        saveBtn.className = "save-btn";
+
+        statusBox.className = "status-box loading";
+        statusBox.innerText = "Sparar närvaro i Google Sheet…";
+
+        var members = (backendPayload && backendPayload.members) ? backendPayload.members : [];
+        var attendanceArray = [];
+
+        for (var i = 0; i < members.length; i++) {
+          var m = members[i];
+          var isPresent = Boolean(localAttendance[m.name]);
+          attendanceArray.push({
+            row: m.row,
+            member: m.name,
+            present: isPresent
+          });
+        }
+
+        google.script.run
+          .withSuccessHandler(onSaveSuccess)
+          .withFailureHandler(onSaveFailure)
+          .saveAttendance(selectedDateFormatted, selectedLocation, attendanceArray);
+      }
+
+      function onSaveSuccess(response) {
+        isSaving = false;
+        var saveBtn = document.getElementById("saveBtn");
+        var statusBox = document.getElementById("statusBox");
+
+        if (response && response.success === false) {
+          saveBtn.disabled = false;
+          saveBtn.innerText = "Spara";
+          saveBtn.className = "save-btn";
+
+          statusBox.className = "status-box error";
+          statusBox.innerText = "Kunde inte spara: " + (response.error || response.message || "Servern rapporterade ett fel.") + ". Försök igen.";
+          return;
+        }
+
+        saveBtn.disabled = false;
+        saveBtn.innerText = "Sparat";
+        saveBtn.className = "save-btn saved";
+
+        statusBox.className = "status-box success";
+        statusBox.innerText = "Närvaron sparades i Google Sheet.";
+
+        setTimeout(function() {
+          if (!isSaving && saveBtn.innerText === "Sparat") {
+            saveBtn.innerText = "Spara";
+            saveBtn.className = "save-btn";
+          }
+          if (statusBox.className === "status-box success") {
+            statusBox.style.display = "none";
+          }
+        }, 3000);
+
+        fetchAttendanceData();
+      }
+
+      function onSaveFailure(error) {
+        isSaving = false;
+        var saveBtn = document.getElementById("saveBtn");
+        saveBtn.disabled = false;
+        saveBtn.innerText = "Spara";
+        saveBtn.className = "save-btn";
+
+        var statusBox = document.getElementById("statusBox");
+        statusBox.className = "status-box error";
+        statusBox.innerText = "Kunde inte spara: " + (error.message || String(error)) + ". Försök igen.";
+      }
+
+      /* ==========================================================================
+       * Administration - Delete Training Column (Step 4)
+       * ========================================================================== */
+
+      function renderAdminTrainingList() {
+        var container = document.getElementById("adminTrainingList");
+        if (!container) return;
+        container.innerHTML = "";
+
+        var cols = (backendPayload && backendPayload.trainingColumns) ? backendPayload.trainingColumns : [];
+
+        if (cols.length === 0) {
+          var emptyDiv = document.createElement("div");
+          emptyDiv.className = "empty-state";
+          emptyDiv.innerText = "Inga registrerade träningskolumner hittades.";
+          container.appendChild(emptyDiv);
+          return;
+        }
+
+        cols.forEach(function(col) {
+          var item = document.createElement("div");
+          item.className = "admin-training-item";
+
+          var infoDiv = document.createElement("div");
+          infoDiv.className = "admin-training-info";
+
+          var headerSpan = document.createElement("span");
+          headerSpan.className = "admin-training-header";
+          headerSpan.innerText = col.header;
+
+          infoDiv.appendChild(headerSpan);
+
+          var delBtn = document.createElement("button");
+          delBtn.type = "button";
+          delBtn.className = "admin-delete-btn";
+          delBtn.innerText = "Ta bort";
+          delBtn.disabled = isDeleting;
+          delBtn.onclick = function() {
+            promptDeleteTraining(col);
+          };
+
+          item.appendChild(infoDiv);
+          item.appendChild(delBtn);
+          container.appendChild(item);
+        });
+      }
+
+      function promptDeleteTraining(col) {
+        if (isDeleting) return;
+
+        // Härled datum och plats från objektet eller från rubriken (t.ex. "Valhalla 5/9")
+        var date = col.date;
+        var location = col.location;
+
+        if (!date || !location) {
+          var parts = (col.header || "").trim().split(/\s+/);
+          if (parts.length >= 2) {
+            location = parts[0];
+            date = parts.slice(1).join(" ");
+          }
+        }
+
+        pendingDeleteTarget = {
+          date: date,
+          location: location,
+          header: col.header
+        };
+
+        document.getElementById("modalTargetHeader").innerText = col.header;
+        document.getElementById("deleteModal").style.display = "flex";
+      }
+
+      function closeDeleteModal() {
+        if (isDeleting) return;
+        document.getElementById("deleteModal").style.display = "none";
+        pendingDeleteTarget = null;
+      }
+
+      function confirmDeleteTraining() {
+        if (!pendingDeleteTarget || isDeleting) return;
+
+        var target = pendingDeleteTarget;
+        var adminStatusBox = document.getElementById("adminStatusBox");
+        var confirmBtn = document.getElementById("modalConfirmBtn");
+        var cancelBtn = document.getElementById("modalCancelBtn");
+
+        if (typeof google === "undefined" || !google.script || !google.script.run) {
+          closeDeleteModal();
+          adminStatusBox.className = "status-box error";
+          adminStatusBox.innerText = "google.script.run är inte tillgängligt i denna miljö.";
+          return;
+        }
+
+        isDeleting = true;
+        confirmBtn.disabled = true;
+        confirmBtn.innerText = "Tar bort…";
+        cancelBtn.disabled = true;
+
+        adminStatusBox.className = "status-box loading";
+        adminStatusBox.innerText = "Tar bort " + target.header + " från Google Sheet…";
+
+        google.script.run
+          .withSuccessHandler(function(response) {
+            isDeleting = false;
+            confirmBtn.disabled = false;
+            confirmBtn.innerText = "Ta bort";
+            cancelBtn.disabled = false;
+            closeDeleteModal();
+
+            if (response && response.success === false) {
+              adminStatusBox.className = "status-box error";
+              adminStatusBox.innerText = "Kunde inte ta bort: " + (response.error || response.message || "Servern rapporterade ett fel.");
+              return;
+            }
+
+            adminStatusBox.className = "status-box success";
+            adminStatusBox.innerText = target.header + " har tagits bort.";
+
+            // Hämta om kalkylarksdata för att synkronisera listan
+            fetchAttendanceData(function() {
+              renderAdminTrainingList();
+            });
+
+            setTimeout(function() {
+              if (adminStatusBox.className === "status-box success") {
+                adminStatusBox.style.display = "none";
+              }
+            }, 4000);
+          })
+          .withFailureHandler(function(error) {
+            isDeleting = false;
+            confirmBtn.disabled = false;
+            confirmBtn.innerText = "Ta bort";
+            cancelBtn.disabled = false;
+            closeDeleteModal();
+
+            adminStatusBox.className = "status-box error";
+            adminStatusBox.innerText = "Kommunikationsfel vid radering: " + (error.message || String(error));
+          })
+          .deleteTrainingColumn(target.date, target.location);
+      }
+
+      function findMatchingTrainingColumn() {
+        if (!backendPayload || !backendPayload.trainingColumns) return null;
+
+        var cols = backendPayload.trainingColumns;
+        for (var i = 0; i < cols.length; i++) {
+          var col = cols[i];
+          if (col.location === selectedLocation && col.date === selectedDateFormatted) {
+            return col;
+          }
+        }
+        return null;
+      }
+
+      function recomputeLocalAttendanceFromBackend() {
+        var noticeBox = document.getElementById("trainingNotice");
+        var legendBox = document.getElementById("payLegend");
+
+        if (!backendPayload || !backendPayload.members) {
+          noticeBox.style.display = "none";
+          legendBox.style.display = "none";
+          renderMemberList();
+          updateChecksum();
+          return;
+        }
+
+        var members = backendPayload.members || [];
+        var matchedTraining = findMatchingTrainingColumn();
+
+        localAttendance = {};
+
+        if (!matchedTraining) {
+          noticeBox.style.display = "block";
+          noticeBox.innerText = "Ingen registrerad kolumn för " + selectedLocation + " " + selectedDateFormatted + " i kalkylarket.";
+
+          members.forEach(function(member) {
+            localAttendance[member.name] = false;
+          });
+        } else {
+          noticeBox.style.display = "none";
+
+          members.forEach(function(member) {
+            var isPresent =
+              backendPayload.attendance &&
+              backendPayload.attendance[member.name] &&
+              backendPayload.attendance[member.name][matchedTraining.header] === true;
+
+            localAttendance[member.name] = isPresent;
+          });
+        }
+
+        renderMemberList();
+        updateChecksum();
+        legendBox.style.display = "flex";
+      }
+
+      function getPaymentStatus(memberName) {
+        if (!backendPayload || !backendPayload.paymentStatus) return "none";
+        return backendPayload.paymentStatus[memberName] || "none";
+      }
+
+      function renderSheetLink() {
+        var link = document.getElementById("openSheetLink");
+        if (!link) return;
+        if (backendPayload && backendPayload.sheetUrl) {
+          link.href = backendPayload.sheetUrl;
+          link.style.display = "flex";
+        } else {
+          link.style.display = "none";
+        }
+      }
+
+      function renderPayAdmin() {
+        var listContainer = document.getElementById("payAdminList");
+        var summaryContainer = document.getElementById("payAdminSummary");
+        if (!listContainer || !summaryContainer) return;
+        listContainer.innerHTML = "";
+        summaryContainer.innerHTML = "";
+
+        var members = (backendPayload && backendPayload.members) ? backendPayload.members : [];
+        if (members.length === 0) {
+          listContainer.innerHTML = '<div class="empty-state">Ingen data hämtad.</div>';
+          return;
+        }
+
+        var counts = { paid: 0, owes: 0, none: 0 };
+        members.forEach(function(m) {
+          counts[getPaymentStatus(m.name)]++;
+        });
+
+        summaryContainer.innerHTML =
+          '<div class="pay-admin-chip"><span class="pay-badge paid"></span>Betald: ' + counts.paid + '</div>' +
+          '<div class="pay-admin-chip"><span class="pay-badge owes"></span>Ej betald: ' + counts.owes + '</div>' +
+          '<div class="pay-admin-chip"><span class="pay-badge" style="background-color:#e2e8f0;"></span>Övriga: ' + counts.none + '</div>';
+
+        members.forEach(function(m) {
+          var status = getPaymentStatus(m.name);
+          var item = document.createElement("div");
+          item.className = "pay-admin-item";
+
+          var nameDiv = document.createElement("div");
+          nameDiv.className = "pay-admin-name";
+          var dot = document.createElement("span");
+          dot.className = "pay-badge " + (status === "paid" ? "paid" : status === "owes" ? "owes" : "none");
+          if (status === "none") dot.style.backgroundColor = "#e2e8f0";
+          nameDiv.appendChild(dot);
+          nameDiv.appendChild(document.createTextNode(m.name));
+
+          var label = document.createElement("span");
+          label.className = "pay-cycle-btn";
+          label.innerText = status === "paid" ? "Betald" : status === "owes" ? "Ej betald" : "—";
+
+          item.appendChild(nameDiv);
+          item.appendChild(label);
+          listContainer.appendChild(item);
+        });
+      }
+
+      function toggleAttendance(memberName) {
+        if (isSaving) return;
+        localAttendance[memberName] = !localAttendance[memberName];
+        var rowElem = document.getElementById("memberRow_" + escapeId(memberName));
+        if (rowElem) {
+          if (localAttendance[memberName]) {
+            rowElem.className = "member-row is-present";
+          } else {
+            rowElem.className = "member-row";
+          }
+        }
+        updateChecksum();
+      }
+
+      function updateChecksum() {
+        var count = 0;
+        for (var key in localAttendance) {
+          if (localAttendance[key]) {
+            count++;
+          }
+        }
+        document.getElementById("checksumCount").innerText = count;
+      }
+
+      function escapeId(name) {
+        return encodeURIComponent(name).replace(/[^a-zA-Z0-9]/g, "_");
+      }
+
+      function renderMemberList() {
+        var listContainer = document.getElementById("memberList");
+        listContainer.innerHTML = "";
+
+        var members = (backendPayload && backendPayload.members) ? backendPayload.members : [];
+
+        if (members.length === 0) {
+          var emptyDiv = document.createElement("div");
+          emptyDiv.className = "empty-state";
+          emptyDiv.innerText = "Inga medlemmar inlästa ännu. Kontrollera anslutningen till kalkylarket.";
+          listContainer.appendChild(emptyDiv);
+          return;
+        }
+
+        members.forEach(function(member) {
+          var isPresent = !!localAttendance[member.name];
+
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.id = "memberRow_" + escapeId(member.name);
+          btn.className = "member-row" + (isPresent ? " is-present" : "");
+          btn.onclick = function() { toggleAttendance(member.name); };
+
+          var nameSpan = document.createElement("span");
+          nameSpan.className = "member-name";
+          nameSpan.innerText = member.name;
+
+          // Payment status badge: green = paid, amber = trained but not paid.
+          // Placed left of the checkbox (inside a wrapper so the tick stays right-aligned).
+          var payStatus = getPaymentStatus(member.name);
+          var payDiv = null;
+          if (payStatus === "paid" || payStatus === "owes") {
+            payDiv = document.createElement("div");
+            payDiv.className = "pay-badge " + (payStatus === "paid" ? "paid" : "owes");
+            payDiv.setAttribute("role", "img");
+            payDiv.setAttribute("aria-label", payStatus === "paid" ? "Har betalat" : "Tränat, ej betald");
+          }
+
+          var checkDiv = document.createElement("div");
+          checkDiv.className = "checkbox-indicator";
+
+          var checkSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          checkSvg.setAttribute("class", "checkmark-icon");
+          checkSvg.setAttribute("viewBox", "0 0 24 24");
+
+          var checkPolyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+          checkPolyline.setAttribute("points", "20 6 9 17 4 12");
+          checkSvg.appendChild(checkPolyline);
+          checkDiv.appendChild(checkSvg);
+
+          var rightGroup = document.createElement("span");
+          rightGroup.style.display = "flex";
+          rightGroup.style.alignItems = "center";
+          rightGroup.style.gap = "10px";
+          if (payDiv) rightGroup.appendChild(payDiv);
+          rightGroup.appendChild(checkDiv);
+
+          btn.appendChild(nameSpan);
+          btn.appendChild(rightGroup);
+          listContainer.appendChild(btn);
+        });
+      }
+
+      window.onload = function() {
+        initDateOptions();
+        fetchAttendanceData();
+      };
+    </script>
+  </body>
+</html>

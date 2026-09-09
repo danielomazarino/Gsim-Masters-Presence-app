@@ -1,0 +1,3 @@
+# Only files in the rootDir (appsscript/) are pushed; this ignores everything else
+**/**
+!appsscript/**/*
