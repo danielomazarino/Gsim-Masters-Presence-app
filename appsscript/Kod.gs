@@ -14,23 +14,25 @@
 //   C  saveAttendance()
 //   F0 deleteTrainingColumn()
 //   P  resolveAttendanceSheet() / getPaymentStatusMap()
+//   Q  setPaymentStatuses()
 //
-// Payment status is READ from column A background colors:
+// Payment status lives in column A background colors:
 //   #6aa84f (green) -> "paid",  #990000 (dark red) -> "owes",
 //   anything else   -> "none"
-// The web app never writes to the sheet; colors are administered
-// directly in Google Sheets.
+// The colors can be administered BOTH from the web app and manually
+// in Google Sheets — the sheet remains the single source of truth.
 // The sheet itself is resolved robustly (see resolveAttendanceSheet),
 // so a renamed sheet (e.g. "VT -27") or a new spreadsheet works
 // without code changes.
 // ============================================================
 
 // ------------------------------------------------------------
-// P — SHEET RESOLUTION & PAYMENT STATUS (read-only)
+// P — SHEET RESOLUTION & PAYMENT STATUS
 // ------------------------------------------------------------
 
 var PAYMENT_COLOR_PAID = "#6aa84f";
 var PAYMENT_COLOR_OWES = "#990000";
+var PAYMENT_COLOR_NONE = "#ffffff";
 
 // Fallback sheet names tried in order before content-based detection.
 // Extend this list for new seasons (e.g. add "VT -27", "HT -27").
@@ -91,7 +93,6 @@ function resolveAttendanceSheet(ss) {
 
 /**
  * Reads member payment status from column A background colors.
- * Read-only: the web app never modifies the sheet.
  *
  * @param {Sheet} sheet - The resolved attendance sheet.
  * @return {Object} Map: { "Member Name": "paid" | "owes" | "none" }.
@@ -129,6 +130,167 @@ function getPaymentStatusMap(sheet) {
   }
 
   return statusMap;
+}
+
+// ------------------------------------------------------------
+// Q — WRITE PAYMENT STATUSES
+// ------------------------------------------------------------
+
+/**
+ * Writes payment status changes to column A background colors.
+ *
+ * Coexists with manual editing in Google Sheets: the lock only
+ * serializes app-driven writes, and every change is re-read and
+ * verified after writing.
+ *
+ * @param {Array<Object>} changes - [{ name: string, status: "paid" | "owes" | "none" }].
+ * @return {Object} { success: boolean, updated: Array, errors: Array }.
+ */
+function setPaymentStatuses(changes) {
+
+  if (!Array.isArray(changes) || changes.length === 0) {
+    return {
+      success: false,
+      updated: [],
+      errors: ["Inga ändringar angivna."]
+    };
+  }
+
+  var validStatuses = ["paid", "owes", "none"];
+  for (var v = 0; v < changes.length; v++) {
+    if (!changes[v] || typeof changes[v].name !== "string" || validStatuses.indexOf(changes[v].status) === -1) {
+      return {
+        success: false,
+        updated: [],
+        errors: ["Ogiltig ändring vid index " + v + "."]
+      };
+    }
+  }
+
+  var lock = LockService.getScriptLock();
+
+  try {
+    var hasLock = lock.tryLock(15000);
+
+    if (!hasLock) {
+      return {
+        success: false,
+        updated: [],
+        errors: ["Kunde inte erhålla scriptlås. En annan operation pågår. Försök igen om en stund."]
+      };
+    }
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = resolveAttendanceSheet(ss);
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) {
+      return {
+        success: false,
+        updated: [],
+        errors: ["Kalkylarket innehåller inga medlemmar."]
+      };
+    }
+
+    // Fresh read right before writing: names + current backgrounds.
+    // This minimizes the window for races against manual edits.
+    var namesRange = sheet.getRange(2, 1, lastRow - 1, 1);
+    var names = namesRange.getValues();
+    var currentBackgrounds = namesRange.getBackgrounds();
+
+    // Build row index: name -> array of row offsets (duplicates rejected)
+    var nameToOffsets = {};
+    for (var i = 0; i < names.length; i++) {
+      var name = String(names[i][0]).trim();
+      if (!name) {
+        continue;
+      }
+      if (!nameToOffsets[name]) {
+        nameToOffsets[name] = [];
+      }
+      nameToOffsets[name].push(i);
+    }
+
+    var colorFor = function(status) {
+      if (status === "paid") return PAYMENT_COLOR_PAID;
+      if (status === "owes") return PAYMENT_COLOR_OWES;
+      return PAYMENT_COLOR_NONE;
+    };
+
+    // Stage writes: batch all changes into one setBackgrounds call.
+    var staged = names.map(function() { return null; });
+    var updated = [];
+    var errors = [];
+
+    changes.forEach(function(change) {
+      var offsets = nameToOffsets[change.name];
+
+      if (!offsets || offsets.length === 0) {
+        errors.push("Medlemmen \"" + change.name + "\" hittades inte.");
+        return;
+      }
+      if (offsets.length > 1) {
+        errors.push("Medlemmen \"" + change.name + "\" finns på " + offsets.length + " rader — ändringen avbröts.");
+        return;
+      }
+
+      var offset = offsets[0];
+      var desiredColor = colorFor(change.status);
+      var currentColor = String(currentBackgrounds[offset][0]).trim().toLowerCase();
+
+      if (currentColor === desiredColor) {
+        // Already correct (possibly edited manually in the meantime) — no write needed
+        updated.push({ name: change.name, status: change.status, row: offset + 2, alreadySet: true });
+        return;
+      }
+
+      staged[offset] = desiredColor;
+      updated.push({ name: change.name, status: change.status, row: offset + 2 });
+    });
+
+    // Write all staged colors in one batch
+    var anyWrites = staged.some(function(c) { return c !== null; });
+    if (anyWrites) {
+      var finalBackgrounds = currentBackgrounds.map(function(rowColors, idx) {
+        return [staged[idx] !== null ? staged[idx] : rowColors[0]];
+      });
+      namesRange.setBackgrounds(finalBackgrounds);
+      SpreadsheetApp.flush();
+
+      // Re-read and verify every intended change
+      var verifyBackgrounds = namesRange.getBackgrounds();
+      updated.forEach(function(entry) {
+        if (entry.alreadySet) {
+          return;
+        }
+        var offset = entry.row - 2;
+        var actual = String(verifyBackgrounds[offset][0]).trim().toLowerCase();
+        var expected = colorFor(entry.status);
+        if (actual !== expected) {
+          errors.push("Kunde inte verifiera ändringen för \"" + entry.name + "\".");
+        }
+      });
+    }
+
+    return {
+      success: errors.length === 0,
+      updated: updated,
+      errors: errors
+    };
+
+  } catch (err) {
+    return {
+      success: false,
+      updated: [],
+      errors: ["Fel vid sparande av betalstatus: " + (err.message || String(err))]
+    };
+  } finally {
+    try {
+      lock.releaseLock();
+    } catch (e) {
+      // Låset kan redan ha släppts
+    }
+  }
 }
 
 

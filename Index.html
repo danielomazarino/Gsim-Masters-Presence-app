@@ -760,7 +760,7 @@
             </svg>
             <span>
               Öppna Google Sheet
-              <span class="sheet-link-sub">Ändra betalstatus via färgerna i kolumn A</span>
+              <span class="sheet-link-sub">Samma data — redigera där om du föredrar det</span>
             </span>
           </a>
         </div>
@@ -768,10 +768,12 @@
         <div class="admin-card">
           <div class="admin-section-title">Betalstatus</div>
           <p class="admin-desc">
-            Tryck på en grupp nedan för att filtrera listan. Färgerna ändras i Google Sheet (länken ovan).
+            Tryck på en grupp för att filtrera listan. Ändringar här uppdaterar färgerna i Google Sheet direkt.
           </p>
           <div id="payAdminSummary" class="pay-admin-summary"></div>
+          <div id="payAdminUnsaved" class="pay-admin-unsaved"></div>
           <div id="payAdminList" class="pay-admin-list"></div>
+          <button type="button" id="payAdminSaveBtn" class="pay-admin-save-btn" style="display: none;" onclick="savePaymentStatuses()">Spara i Google Sheet</button>
         </div>
 
         <div class="admin-card">
@@ -1233,8 +1235,16 @@
       }
 
       var payAdminFilter = null; // null = show all, or "paid" | "owes" | "none"
+      var payAdminPending = {};  // { "Member Name": "paid" | "owes" | "none" }
+      var isSavingPayment = false;
 
       function getPaymentStatus(memberName) {
+        if (payAdminPending.hasOwnProperty(memberName)) return payAdminPending[memberName];
+        if (!backendPayload || !backendPayload.paymentStatus) return "none";
+        return backendPayload.paymentStatus[memberName] || "none";
+      }
+
+      function getCommittedStatus(memberName) {
         if (!backendPayload || !backendPayload.paymentStatus) return "none";
         return backendPayload.paymentStatus[memberName] || "none";
       }
@@ -1242,6 +1252,98 @@
       function setPayAdminFilter(status) {
         payAdminFilter = (payAdminFilter === status) ? null : status;
         renderPayAdmin();
+      }
+
+      function cyclePaymentStatus(memberName) {
+        var current = getPaymentStatus(memberName);
+        var next = current === "paid" ? "owes" : current === "owes" ? "none" : "paid";
+        var committed = getCommittedStatus(memberName);
+        if (next === committed) {
+          delete payAdminPending[memberName];
+        } else {
+          payAdminPending[memberName] = next;
+        }
+        renderPayAdmin();
+      }
+
+      function updatePayAdminFooter() {
+        var pendingCount = Object.keys(payAdminPending).length;
+        var banner = document.getElementById("payAdminUnsaved");
+        var saveBtn = document.getElementById("payAdminSaveBtn");
+        if (!banner || !saveBtn) return;
+        if (pendingCount > 0) {
+          banner.innerText = pendingCount + " ändring" + (pendingCount > 1 ? "ar" : "") + " sparades ej än — tryck Spara för att uppdatera Google Sheet.";
+          banner.classList.add("visible");
+          saveBtn.style.display = "block";
+          saveBtn.disabled = isSavingPayment;
+          saveBtn.innerText = isSavingPayment ? "Sparar…" : "Spara i Google Sheet";
+        } else {
+          banner.classList.remove("visible");
+          saveBtn.style.display = "none";
+        }
+      }
+
+      function savePaymentStatuses() {
+        if (isSavingPayment) return;
+        var names = Object.keys(payAdminPending);
+        if (names.length === 0) return;
+
+        if (typeof google === "undefined" || !google.script || !google.script.run) {
+          var banner = document.getElementById("payAdminUnsaved");
+          if (banner) {
+            banner.innerText = "google.script.run är inte tillgängligt i denna miljö.";
+            banner.classList.add("visible");
+          }
+          return;
+        }
+
+        isSavingPayment = true;
+        updatePayAdminFooter();
+
+        var changes = names.map(function(name) {
+          return { name: name, status: payAdminPending[name] };
+        });
+
+        google.script.run
+          .withSuccessHandler(function(response) {
+            isSavingPayment = false;
+            payAdminPending = {};
+
+            var banner = document.getElementById("payAdminUnsaved");
+            var ok = response && response.success;
+            var savedCount = ok && response.updated ? response.updated.length : 0;
+
+            if (ok) {
+              banner.innerText = savedCount + " ändring" + (savedCount > 1 ? "ar" : "") + " sparades till Google Sheet.";
+              banner.classList.add("visible");
+              setTimeout(function() {
+                banner.classList.remove("visible");
+              }, 4000);
+            } else {
+              var errs = (response && response.errors) ? response.errors.join(" ") : "Okänt fel.";
+              banner.innerText = "Kunde inte spara: " + errs;
+              banner.classList.add("visible");
+            }
+
+            updatePayAdminFooter();
+            // Refetch so backendPayload.paymentStatus reflects the sheet
+            fetchAttendanceData(function() {
+              if (currentView === "admin") {
+                renderPayAdmin();
+                renderAdminTrainingList();
+              }
+            });
+          })
+          .withFailureHandler(function(error) {
+            isSavingPayment = false;
+            updatePayAdminFooter();
+            var banner = document.getElementById("payAdminUnsaved");
+            if (banner) {
+              banner.innerText = "Kommunikationsfel: " + (error.message || String(error));
+              banner.classList.add("visible");
+            }
+          })
+          .setPaymentStatuses(changes);
       }
 
       function renderSheetLink() {
@@ -1309,6 +1411,9 @@
           if (payAdminFilter && status !== payAdminFilter) return;
           shown++;
 
+          var committed = getCommittedStatus(m.name);
+          var isPending = payAdminPending.hasOwnProperty(m.name);
+
           var item = document.createElement("div");
           item.className = "pay-admin-item";
 
@@ -1319,10 +1424,22 @@
           if (status === "none") dot.style.backgroundColor = "#e2e8f0";
           nameDiv.appendChild(dot);
           nameDiv.appendChild(document.createTextNode(m.name));
+          if (isPending) {
+            var pendingMark = document.createElement("span");
+            pendingMark.innerText = "•";
+            pendingMark.title = "Ändring ej sparad";
+            pendingMark.style.color = "#2563eb";
+            pendingMark.style.fontWeight = "700";
+            nameDiv.appendChild(pendingMark);
+          }
 
-          var label = document.createElement("span");
+          // Tappable status label: cycles paid -> owes -> none
+          var label = document.createElement("button");
+          label.type = "button";
           label.className = "pay-cycle-btn";
+          if (isPending) label.style.borderColor = "#2563eb";
           label.innerText = status === "paid" ? "Har betalat" : status === "owes" ? "Ej betald" : "—";
+          label.onclick = function() { cyclePaymentStatus(m.name); };
 
           item.appendChild(nameDiv);
           item.appendChild(label);
@@ -1335,6 +1452,8 @@
           emptyDiv.innerText = "Inga medlemmar i den här gruppen.";
           listContainer.appendChild(emptyDiv);
         }
+
+        updatePayAdminFooter();
       }
 
       function toggleAttendance(memberName) {
