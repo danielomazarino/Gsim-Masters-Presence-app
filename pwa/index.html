@@ -140,9 +140,14 @@
       // Routing through accounts.google.com/AccountChooser would show an
       // account picker on every launch.
       document.getElementById("openBtn").href = APP_URL;
-      // Launching from the card also counts as "seen".
-      try { localStorage.setItem("pwaSeen", "1"); } catch (e) {}
-      document.cookie = "pwaSeen=1; path=/; max-age=31536000; SameSite=Lax";
+      // Only remember the launch once the user actually engages with the
+      // card. Marking it while the card is merely displayed would make the
+      // next launch skip past the card — including right after a logout,
+      // which must keep showing the card until the user logs in again.
+      document.getElementById("openBtn").addEventListener("click", function () {
+        try { localStorage.setItem("pwaSeen", "1"); } catch (e) {}
+        document.cookie = "pwaSeen=1; path=/; max-age=31536000; SameSite=Lax";
+      });
     </script>
   </body>
 </html>
