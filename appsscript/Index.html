@@ -1166,19 +1166,30 @@
 
       function confirmLogout() {
         closeLogoutModal();
-        var appUrl = window.location.origin + window.location.pathname;
-        // Google /Logout decodes the continue parameter once before
-        // redirecting, so continue must be given exactly as—after that
-        // single decode—it should appear to the target page.
-        // Logout always returns to the PWA wrapper landing card: that page
-        // is where re-logging in is one tap (Logga in) and where the
-        // home-screen icon install instructions live.
-        var landing = "https://danielomazarino.github.io/Gsim-Masters-Presence-app/?logout=1";
+        // The public exec URL (substituted from https://script.google.com/a/macros/goteborgsim.se/s/AKfycby-YQowvpANxzysEErwhF2cP_AkfDJXWRBmZJ3wNJ29_pFD1uCF-kMqeGmDxVTmVPI3/exec below at deploy
+        // time inside Apps Script's templating is not available here), so
+        // derive it from the hosting chain: HtmlService iframes keep a
+        // reference to the outer exec origin via document.referrer only in
+        // some flows. Simplest reliable source: the deployment is
+        // script.google.com; resolve it from the parent frames if present,
+        // else fall back to the wrapper-injected value.
+        // NOTE: https://script.google.com/a/macros/goteborgsim.se/s/AKfycby-YQowvpANxzysEErwhF2cP_AkfDJXWRBmZJ3wNJ29_pFD1uCF-kMqeGmDxVTmVPI3/exec is replaced at deploy time by the CI workflow
+        // (same mechanism as the GitHub Pages wrapper) or manually.
+        var execUrl = "https://script.google.com/a/macros/goteborgsim.se/s/AKfycby-YQowvpANxzysEErwhF2cP_AkfDJXWRBmZJ3wNJ29_pFD1uCF-kMqeGmDxVTmVPI3/exec";
+        var chooserUrl =
+          "https://accounts.google.com/AccountChooser" +
+          "?continue=" + encodeURIComponent(execUrl + "?open=1");
         var logoutUrl =
           "https://accounts.google.com/Logout" +
-          "?continue=" + encodeURIComponent(landing) +
+          "?continue=" + encodeURIComponent(chooserUrl) +
           "&zx=" + Date.now();
-        window.location.replace(logoutUrl);
+        // Navigate the TOP page: navigating only the inner iframe puts
+        // accounts.google.com in a cookie-less third-party context.
+        try {
+          window.top.location.href = logoutUrl;
+        } catch (e) {
+          window.open(logoutUrl, "_top");
+        }
       }
 
       function confirmDeleteTraining() {
