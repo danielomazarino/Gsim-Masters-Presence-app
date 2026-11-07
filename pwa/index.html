@@ -19,13 +19,20 @@
       (function () {
         var params = new URLSearchParams(window.location.search);
 
-        // ?logout=1: the user just logged out. Forget the "already seen"
-        // flag so this launch (and the next) shows the start card with the
-        // login button, then fall through to render it.
+        // ?logout=1: the user pressed "Logga ut" in the app. Forget the
+        // "already seen" flag, then really end the Google session.
+        // Google's /Logout answers HTTP 400 when the continue URL is not on a
+        // Google domain, so this page cannot be the landing page of a real
+        // logout. Instead the Workspace logout endpoint ends both the SSO and
+        // the Google session and returns to the app URL, which then shows its
+        // own sign-in page.
         if (params.get("logout") === "1") {
           try { localStorage.removeItem("pwaSeen"); } catch (e) {}
           document.cookie = "pwaSeen=; path=/; max-age=0; SameSite=Lax";
-          document.documentElement.className += " show-card";
+          window.location.replace(
+            "https://www.google.com/a/goteborgsim.se/Logout?continue=" +
+              encodeURIComponent(APP_URL)
+          );
           return;
         }
 

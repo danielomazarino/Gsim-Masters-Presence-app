@@ -1182,10 +1182,10 @@
 
       function confirmLogout() {
         closeLogoutModal();
-        // Logging out returns the user to the app's start page (the GitHub
-        // Pages wrapper), not to a Google screen. Google's /Logout rejects
-        // non-Google continue URLs, so the wrapper is entered directly: it
-        // clears the "already seen" launch flag and shows the start card.
+        // ?logout=1 makes the wrapper end the Google session and return to the
+        // app URL, which then shows its sign-in page. Google's /Logout rejects
+        // every non-Google continue URL, so the wrapper cannot be the landing
+        // page of a real logout.
         var wrapUrl = "https://danielomazarino.github.io/Gsim-Masters-Presence-app/?logout=1";
         // Navigate the TOP page: the app runs three frames deep, so moving
         // only the inner iframe would not leave the app.
