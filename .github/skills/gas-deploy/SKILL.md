@@ -1,18 +1,18 @@
 ---
 name: gas-deploy
-description: Deploy local Index.html / Kod.gs to the Göteborg Sim Apps Script web app via the built-in browser, with verification. Use when the user asks to push, deploy, sync, or publish changes to the Script_Training_presence Apps Script project (a.k.a. Gsim Masters Presence app).
+description: Deploy local Index.html / Kod.gs to the Apps Script web app via the built-in browser, with verification. Use when the user asks to push, deploy, sync, or publish changes to the the training-presence Apps Script project.
 ---
 
 # Apps Script Deploy via Built-in Browser (clasp blocked)
 
 ## Context
 
-- Project: `/home/lm/Dev/Gsim-Masters-Presence-app` — `Index.html` (frontend) + `Kod.gs` (backend).
-- Remote: Apps Script project `Script_Training_presence`, script ID `1X3gV-3Wq0NvhaN8EZTUvfM9onboCBe3F7dBpLiHhoWOa_qE-NNd2ZJKx`.
-- **clasp does NOT work** for this Workspace account (`goteborgsim.se`): Google rejects every refresh token with `invalid_grant / rapt_required` (Workspace security policy on clasp's public OAuth client). Do not retry clasp login.
-- Web app URL (stable across versions): `https://script.google.com/a/macros/goteborgsim.se/s/AKfycby-YQowvpANxzysEErwhF2cP_AkfDJXWRBmZJ3wNJ29_pFD1uCF-kMqeGmDxVTmVPI3/exec`
-- Editor URL: `https://script.google.com/u/0/home/projects/1X3gV-3Wq0NvhaN8EZTUvfM9onboCBe3F7dBpLiHhoWOa_qE-NNd2ZJKx/edit`
-- Login: `masters@goteborgsim.se` — session usually alive in the built-in browser. If a password prompt appears, STOP and let the user type it (never handle credentials).
+- Project: the local training-presence repo — `Index.html` (frontend) + `Kod.gs` (backend).
+- Remote: Apps Script project (see `.clasp.json` for the script ID if needed).
+- **clasp does NOT work** for this Workspace account: Google rejects every refresh token with `invalid_grant / rapt_required` (Workspace security policy on clasp's public OAuth client). Do not retry clasp login.
+- Web app URL: to be inserted locally if needed (do not commit live URLs).
+- Editor URL: `https://script.google.com/u/0/home/projects/<SCRIPT_ID>/edit`.
+- Login: the project owner's Workspace account — session usually alive in the built-in browser. If a password prompt appears, STOP and let the user type it (never handle credentials).
 
 ## Prerequisites
 

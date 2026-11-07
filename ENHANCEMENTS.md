@@ -1,4 +1,4 @@
-# Träningsnärvaro HT -26 — Enhancements & Next Development Phase
+# Träningsnärvaro (training presence app) — Enhancements & Next Development Phase
 
 ## Current baseline
 
@@ -25,8 +25,8 @@ The following functionality has already been tested and is considered working:
   - Igår
   - 2 dagar sedan
 - Location selection works:
-  - Askim
-  - Valhalla
+  - Träningsgrupp A
+  - Träningsgrupp B
 - Attendance count works.
 - Save to Google Sheet works.
 - Missing training columns are automatically created when required.
@@ -49,8 +49,8 @@ The application works functionally on iPhone 13, but the horizontal layout of th
 
 The current top control area contains:
 
-- Askim
-- Valhalla
+- Träningsgrupp A
+- Träningsgrupp B
 - Närvarande count
 - Spara
 - Administration gear
