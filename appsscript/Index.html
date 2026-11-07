@@ -864,6 +864,17 @@
         renderSheetLink();
         renderPayAdmin();
         renderAdminTrainingList();
+        // If the admin view is opened before data has arrived (fresh
+        // session, slow load), load it now so the sections are filled.
+        if (!backendPayload) {
+          fetchAttendanceData(function () {
+            if (currentView === "admin") {
+              renderSheetLink();
+              renderPayAdmin();
+              renderAdminTrainingList();
+            }
+          });
+        }
       }
 
       function showAttendanceView() {
@@ -964,6 +975,11 @@
             backendPayload = data || {};
             recomputeLocalAttendanceFromBackend();
             if (currentView === "admin") {
+              // Data may arrive after the admin view was opened (fresh
+              // session / slow load). Re-render every admin section so the
+              // Sheet link and Betalstatus are not left blank.
+              renderSheetLink();
+              renderPayAdmin();
               renderAdminTrainingList();
             }
             if (onComplete) onComplete(true);
