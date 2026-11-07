@@ -50,10 +50,11 @@
           return;
         }
 
-        // First visit: remember it so the next launch goes straight to the app.
-        try { localStorage.setItem("pwaSeen", "1"); } catch (e) {}
-        document.cookie = "pwaSeen=1; path=/; max-age=31536000; SameSite=Lax";
-        // Show the card (safe: the document is still being parsed).
+        // Do NOT remember the launch merely because the card was shown.
+        // The card is also opened in Safari before installing the icon, and
+        // an iOS home-screen web app has its own storage partition, so a flag
+        // set here would make the first icon tap skip the card and land on a
+        // Google login screen (no session in the fresh container).
         document.documentElement.className += " show-card";
       })();
     </script>

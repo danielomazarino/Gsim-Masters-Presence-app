@@ -4,7 +4,7 @@
   "description": "Mobil träningsnärvaro kopplad till Google Sheet.",
   "lang": "sv",
   "display": "standalone",
-  "start_url": "./index.html?open=1",
+  "start_url": "./",
   "scope": "./",
   "theme_color": "#2563eb",
   "background_color": "#f1f5f9",
