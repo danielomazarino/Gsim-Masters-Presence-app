@@ -1182,29 +1182,17 @@
 
       function confirmLogout() {
         closeLogoutModal();
-        // The public exec URL (substituted from https://script.google.com/a/macros/goteborgsim.se/s/AKfycby-YQowvpANxzysEErwhF2cP_AkfDJXWRBmZJ3wNJ29_pFD1uCF-kMqeGmDxVTmVPI3/exec below at deploy
-        // time inside Apps Script's templating is not available here), so
-        // derive it from the hosting chain: HtmlService iframes keep a
-        // reference to the outer exec origin via document.referrer only in
-        // some flows. Simplest reliable source: the deployment is
-        // script.google.com; resolve it from the parent frames if present,
-        // else fall back to the wrapper-injected value.
-        // NOTE: https://script.google.com/a/macros/goteborgsim.se/s/AKfycby-YQowvpANxzysEErwhF2cP_AkfDJXWRBmZJ3wNJ29_pFD1uCF-kMqeGmDxVTmVPI3/exec is replaced at deploy time by the CI workflow
-        // (same mechanism as the GitHub Pages wrapper) or manually.
-        var execUrl = "https://script.google.com/a/macros/goteborgsim.se/s/AKfycby-YQowvpANxzysEErwhF2cP_AkfDJXWRBmZJ3wNJ29_pFD1uCF-kMqeGmDxVTmVPI3/exec";
-        var chooserUrl =
-          "https://accounts.google.com/AccountChooser" +
-          "?continue=" + encodeURIComponent(execUrl + "?open=1");
-        var logoutUrl =
-          "https://accounts.google.com/Logout" +
-          "?continue=" + encodeURIComponent(chooserUrl) +
-          "&zx=" + Date.now();
-        // Navigate the TOP page: navigating only the inner iframe puts
-        // accounts.google.com in a cookie-less third-party context.
+        // Logging out returns the user to the app's start page (the GitHub
+        // Pages wrapper), not to a Google screen. Google's /Logout rejects
+        // non-Google continue URLs, so the wrapper is entered directly: it
+        // clears the "already seen" launch flag and shows the start card.
+        var wrapUrl = "https://danielomazarino.github.io/Gsim-Masters-Presence-app/?logout=1";
+        // Navigate the TOP page: the app runs three frames deep, so moving
+        // only the inner iframe would not leave the app.
         try {
-          window.top.location.href = logoutUrl;
+          window.top.location.href = wrapUrl;
         } catch (e) {
-          window.open(logoutUrl, "_top");
+          window.open(wrapUrl, "_top");
         }
       }
 

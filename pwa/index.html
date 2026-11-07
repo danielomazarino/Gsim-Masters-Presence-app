@@ -18,8 +18,22 @@
       var APP_URL = "%APP_URL%";
       (function () {
         var params = new URLSearchParams(window.location.search);
+
+        // ?logout=1: the user just logged out. Forget the "already seen"
+        // flag so this launch (and the next) shows the start card with the
+        // login button, then fall through to render it.
+        if (params.get("logout") === "1") {
+          try { localStorage.removeItem("pwaSeen"); } catch (e) {}
+          document.cookie = "pwaSeen=; path=/; max-age=0; SameSite=Lax";
+          document.documentElement.className += " show-card";
+          return;
+        }
+
         // ?card=1 always shows this card (used to reach the install help).
-        if (params.get("card") === "1") return;
+        if (params.get("card") === "1") {
+          document.documentElement.className += " show-card";
+          return;
+        }
 
         // Has this browser launched the app before? localStorage persists in
         // iOS home-screen web apps, and a cookie is checked too because
