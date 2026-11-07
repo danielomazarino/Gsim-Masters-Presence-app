@@ -140,14 +140,17 @@
       // Routing through accounts.google.com/AccountChooser would show an
       // account picker on every launch.
       document.getElementById("openBtn").href = APP_URL;
-      // Only remember the launch once the user actually engages with the
-      // card. Marking it while the card is merely displayed would make the
-      // next launch skip past the card — including right after a logout,
-      // which must keep showing the card until the user logs in again.
-      document.getElementById("openBtn").addEventListener("click", function () {
+      // Remember the launch only after an actual login click, never just
+      // because the card was displayed: right after a logout the card must
+      // stay the entry point until the user logs in again. Delegated on
+      // document because link activation can fire before this script runs.
+      document.addEventListener("click", function (ev) {
+        var el = ev.target;
+        while (el && el.id !== "openBtn") el = el.parentNode;
+        if (!el) return;
         try { localStorage.setItem("pwaSeen", "1"); } catch (e) {}
         document.cookie = "pwaSeen=1; path=/; max-age=31536000; SameSite=Lax";
-      });
+      }, true);
     </script>
   </body>
 </html>
