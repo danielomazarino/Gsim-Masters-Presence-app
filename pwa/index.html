@@ -39,6 +39,8 @@
         // First visit: remember it so the next launch goes straight to the app.
         try { localStorage.setItem("pwaSeen", "1"); } catch (e) {}
         document.cookie = "pwaSeen=1; path=/; max-age=31536000; SameSite=Lax";
+        // Show the card (safe: the document is still being parsed).
+        document.documentElement.className += " show-card";
       })();
     </script>
     <style>
@@ -54,6 +56,10 @@
         -webkit-user-select: none;
         user-select: none;
       }
+      /* The card stays hidden until the launch decision is known, so a
+         relaunch never flashes it before jumping to the app. */
+      .card { display: none; }
+      html.show-card .card { display: block; }
       .card {
         max-width: 340px;
         padding: 32px 24px;
