@@ -13,6 +13,21 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Närvaro GS">
     <meta name="mobile-web-app-capable" content="yes">
+    <script>
+      // App URL is injected at deploy time by substituting %APP_URL%.
+      var APP_URL = "%APP_URL%";
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        // ?install=1 always shows the instruction card.
+        if (params.get("install") === "1") return;
+        var seen = null;
+        try { seen = localStorage.getItem("pwaSeen"); } catch (e) { seen = null; }
+        // Returning launch (home-screen icon): go straight to the app.
+        // Navigating directly - not through accounts.google.com - keeps the
+        // existing Google session, so no login screen is forced.
+        if (seen === "1") window.location.replace(APP_URL);
+      })();
+    </script>
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
       html, body { height: 100%; }
@@ -37,7 +52,22 @@
         margin: 0 auto 20px;
         display: block;
       }
-      h1 { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
+      h1 { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+      .login-btn {
+        display: block;
+        width: 100%;
+        padding: 15px;
+        margin-bottom: 20px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #ffffff;
+        background-color: #2563eb;
+        border: none;
+        border-radius: 10px;
+        text-decoration: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .login-btn:active { background-color: #1d4ed8; }
       .install {
         font-size: 14px;
         line-height: 1.6;
@@ -45,12 +75,9 @@
         border: 1px solid #bfdbfe;
         border-radius: 10px;
         padding: 12px 14px;
-        margin-bottom: 24px;
         text-align: left;
       }
       .install ol { margin: 6px 0 0 20px; }
-      .openLink { font-size: 13px; color: #475569; margin-top: 20px; }
-      .openLink b { color: #2563eb; }
       .hint { display: block; margin-top: 14px; font-size: 12px; color: #94a3b8; }
     </style>
   </head>
@@ -58,6 +85,7 @@
     <div class="card">
       <img class="logo" src="icon-192.png" alt="Appikon">
       <h1>Träningsnärvaro</h1>
+      <a class="login-btn" id="openBtn" href="#">Logga in</a>
       <div class="install">
         <strong>iPhone (Safari):</strong>
         <ol>
@@ -72,39 +100,14 @@
           <li>Bekräfta <strong>Installera</strong></li>
         </ol>
       </div>
-      <span class="openLink" id="openLink">
-        Vill du bara använda appen nu? <a id="openBtn" href="#">Logga in</a>
-      </span>
       <span class="hint">Inloggning sker hos Google som vanligt — inget lösenord lagras här.</span>
     </div>
     <script>
-      // App URL is injected at deploy time by substituting %APP_URL%.
-      var APP_URL = "%APP_URL%";
-      var params = new URLSearchParams(window.location.search);
-
-      // Route the login through Google's AccountChooser so that a browser
-      // with the wrong (or no) Google session lands on the real sign-in /
-      // account-picker page instead of a cryptic Drive error page.
-      var loginUrl =
-        "https://accounts.google.com/AccountChooser?continue=" +
-        encodeURIComponent(APP_URL + "?open=1");
-
-      // First visit: show the landing card so the user can Add to Home Screen
-      // while this page (and its icon) is the active one. Returning visit
-      // (opened from the home-screen icon): redirect straight to the app.
-      // ?logout=1: the app just signed the user out — always show the card
-      // and reset the seen flag so the login/install flow can repeat.
-      var seen = null;
-      try { seen = localStorage.getItem("pwaSeen"); } catch (e) {}
-      if (params.get("logout") === "1") {
-        try { localStorage.removeItem("pwaSeen"); } catch (e) {}
-        document.getElementById("openBtn").href = loginUrl;
-      } else if (params.get("open") === "1" || seen === "1") {
-        window.location.replace(loginUrl);
-      } else {
-        try { localStorage.setItem("pwaSeen", "1"); } catch (e) {}
-        document.getElementById("openBtn").href = loginUrl;
-      }
+      // Direct link to the app: reuses the existing Google session.
+      // (Routing through accounts.google.com/AccountChooser would force an
+      // account picker on every launch.)
+      document.getElementById("openBtn").href = APP_URL;
+      try { localStorage.setItem("pwaSeen", "1"); } catch (e) {}
     </script>
   </body>
 </html>
