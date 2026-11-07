@@ -58,8 +58,19 @@
     <div class="card">
       <img class="logo" src="icon-192.png" alt="Appikon">
       <h1>Träningsnärvaro</h1>
-      <div class="install" id="install">
-        Installera appen på hemskärmen:
+      <div class="install">
+        <strong>iPhone (Safari):</strong>
+        <ol>
+          <li>Tryck på <strong>Dela</strong>-knappen (kvadrat med pil uppåt) nertill</li>
+          <li>Välj <strong>Lägg till på hemskärmen</strong></li>
+          <li>Tryck på <strong>Lägg till</strong></li>
+        </ol>
+        <strong>Android (Chrome):</strong>
+        <ol>
+          <li>Tryck på menyn <strong>⁝</strong> uppe till höger</li>
+          <li>Välj <strong>Lägg till på startskärmen</strong></li>
+          <li>Bekräfta <strong>Installera</strong></li>
+        </ol>
       </div>
       <span class="openLink" id="openLink">
         Vill du bara använda appen nu? <a id="openBtn" href="#">Logga in</a>
@@ -70,29 +81,13 @@
       // App URL is injected at deploy time by substituting %APP_URL%.
       var APP_URL = "%APP_URL%";
       var params = new URLSearchParams(window.location.search);
-      var landing = APP_URL;
 
-      // Platform-specific, one-line install instruction
-      var ua = navigator.userAgent || "";
-      var steps;
-      if (/iPhone|iPad|iPod/i.test(ua)) {
-        steps =
-          "<li>Tryck på <strong>Dela</strong>-knappen (square med pil uppåt) i Safari nertill</li>" +
-          "<li>Välj <strong>Lägg till på hemskärmen</strong></li>" +
-          "<li>Tryck på <strong>Lägg till</strong> — appen installerar sig med ikonen ovan</li>";
-      } else if (/Android/i.test(ua)) {
-        steps =
-          "<li>Tryck på menyn <strong>⁝</strong> uppe till höger i Chrome</li>" +
-          "<li>Välj <strong>Lägg till på startskärmen</strong></li>" +
-          "<li>Bekräfta <strong>Installera</strong> — appen installeras med ikonen ovan</li>";
-      } else {
-        steps =
-          "<li>Öppna sidan i Safari (iPhone) eller Chrome (Android)</li>" +
-          "<li>Välj <strong>Lägg till på hem-/startskärmen</strong> i webbläsarens meny</li>";
-      }
-      document.getElementById("install").innerHTML =
-        "Installera appen på hemskärmen:" +
-        "<ol>" + steps + "</ol>";
+      // Route the login through Google's AccountChooser so that a browser
+      // with the wrong (or no) Google session lands on the real sign-in /
+      // account-picker page instead of a cryptic Drive error page.
+      var loginUrl =
+        "https://accounts.google.com/AccountChooser?continue=" +
+        encodeURIComponent(APP_URL + "?open=1");
 
       // First visit: show the landing card so the user can Add to Home Screen
       // while this page (and its icon) is the active one. Returning visit
@@ -100,10 +95,10 @@
       var seen = null;
       try { seen = localStorage.getItem("pwaSeen"); } catch (e) {}
       if (params.get("open") === "1" || seen === "1") {
-        window.location.replace(landing);
+        window.location.replace(loginUrl);
       } else {
         try { localStorage.setItem("pwaSeen", "1"); } catch (e) {}
-        document.getElementById("openBtn").href = landing + "?open=1";
+        document.getElementById("openBtn").href = loginUrl;
       }
     </script>
   </body>
