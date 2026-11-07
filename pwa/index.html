@@ -15,18 +15,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <script>
       // App URL is injected at deploy time by substituting %APP_URL%.
+      // The home-screen icon always opens this card. "Logga in" navigates
+      // straight to the app, so an existing Google session is reused and
+      // no login screen is forced.
       var APP_URL = "%APP_URL%";
-      (function () {
-        var params = new URLSearchParams(window.location.search);
-        // ?install=1 always shows the instruction card.
-        if (params.get("install") === "1") return;
-        var seen = null;
-        try { seen = localStorage.getItem("pwaSeen"); } catch (e) { seen = null; }
-        // Returning launch (home-screen icon): go straight to the app.
-        // Navigating directly - not through accounts.google.com - keeps the
-        // existing Google session, so no login screen is forced.
-        if (seen === "1") window.location.replace(APP_URL);
-      })();
     </script>
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -103,11 +95,10 @@
       <span class="hint">Inloggning sker hos Google som vanligt — inget lösenord lagras här.</span>
     </div>
     <script>
-      // Direct link to the app: reuses the existing Google session.
-      // (Routing through accounts.google.com/AccountChooser would force an
-      // account picker on every launch.)
+      // Navigate directly to the app: reuses the existing Google session.
+      // Routing through accounts.google.com/AccountChooser would show an
+      // account picker on every launch.
       document.getElementById("openBtn").href = APP_URL;
-      try { localStorage.setItem("pwaSeen", "1"); } catch (e) {}
     </script>
   </body>
 </html>
