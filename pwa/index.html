@@ -15,10 +15,31 @@
     <meta name="mobile-web-app-capable" content="yes">
     <script>
       // App URL is injected at deploy time by substituting %APP_URL%.
-      // The home-screen icon always opens this card. "Logga in" navigates
-      // straight to the app, so an existing Google session is reused and
-      // no login screen is forced.
       var APP_URL = "%APP_URL%";
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        // ?card=1 always shows this card (used to reach the install help).
+        if (params.get("card") === "1") return;
+
+        // Has this browser launched the app before? localStorage persists in
+        // iOS home-screen web apps, and a cookie is checked too because
+        // storage availability differs between standalone containers and
+        // Safari. Either signal is enough to skip the card.
+        var seen = false;
+        try { seen = localStorage.getItem("pwaSeen") === "1"; } catch (e) {}
+        if (!seen) seen = document.cookie.indexOf("pwaSeen=1") !== -1;
+
+        if (seen) {
+          // Straight into the app: reuses the existing Google session, so no
+          // login screen and no extra tap.
+          window.location.replace(APP_URL);
+          return;
+        }
+
+        // First visit: remember it so the next launch goes straight to the app.
+        try { localStorage.setItem("pwaSeen", "1"); } catch (e) {}
+        document.cookie = "pwaSeen=1; path=/; max-age=31536000; SameSite=Lax";
+      })();
     </script>
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -99,6 +120,9 @@
       // Routing through accounts.google.com/AccountChooser would show an
       // account picker on every launch.
       document.getElementById("openBtn").href = APP_URL;
+      // Launching from the card also counts as "seen".
+      try { localStorage.setItem("pwaSeen", "1"); } catch (e) {}
+      document.cookie = "pwaSeen=1; path=/; max-age=31536000; SameSite=Lax";
     </script>
   </body>
 </html>
