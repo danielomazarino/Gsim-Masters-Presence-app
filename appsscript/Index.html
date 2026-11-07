@@ -557,6 +557,14 @@
       .sheet-link-row:active {
         background-color: #eff6ff;
       }
+      /* Member list: buttered divider between Sheet link and logout row */
+      .logout-row {
+        border-top: 1px solid #e2e8f0;
+        color: #dc2626 !important;
+      }
+      .logout-row:active {
+        background-color: #fef2f2 !important;
+      }
       .sheet-link-row svg {
         width: 20px;
         height: 20px;
@@ -763,6 +771,17 @@
               <span class="sheet-link-sub">Samma data — redigera där om du föredrar det</span>
             </span>
           </a>
+          <button type="button" id="logoutRow" class="sheet-link-row logout-row" onclick="appLogout()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>
+              Logga ut
+              <span class="sheet-link-sub">Avsluta Google-sessionen i denna webbläsare</span>
+            </span>
+          </button>
         </div>
 
         <div class="admin-card">
@@ -801,6 +820,24 @@
           </button>
           <button type="button" class="modal-confirm-btn" id="modalConfirmBtn" onclick="confirmDeleteTraining()">
             Ta bort
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal for Logout -->
+    <div id="logoutModal" class="modal-backdrop" style="display: none;">
+      <div class="modal-box">
+        <div class="modal-title">Logga ut?</div>
+        <div class="modal-body">
+          Du loggas ut från ditt Google-konto i denna webbläsare och återvänder till inloggningssidan.
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="modal-cancel-btn" id="logoutCancelBtn" onclick="closeLogoutModal()">
+            Avbryt
+          </button>
+          <button type="button" class="modal-confirm-btn" id="logoutConfirmBtn" onclick="confirmLogout()">
+            Logga ut
           </button>
         </div>
       </div>
@@ -1113,6 +1150,35 @@
         if (isDeleting) return;
         document.getElementById("deleteModal").style.display = "none";
         pendingDeleteTarget = null;
+      }
+
+      // ---- App logout (admin view) -------------------------------
+      // Signs the Google session out of this browser via accounts.google.com/Logout,
+      // routed through AccountChooser+continue so the next visit lands on a clean
+      // account picker/sign-in instead of a bare access error.
+      function appLogout() {
+        document.getElementById("logoutModal").style.display = "flex";
+      }
+
+      function closeLogoutModal() {
+        document.getElementById("logoutModal").style.display = "none";
+      }
+
+      function confirmLogout() {
+        closeLogoutModal();
+        var appUrl = window.location.origin + window.location.pathname;
+        // Google /Logout decodes the continue parameter once before
+        // redirecting, so continue must be given exactly as—after that
+        // single decode—it should appear to the target page.
+        // Logout always returns to the PWA wrapper landing card: that page
+        // is where re-logging in is one tap (Logga in) and where the
+        // home-screen icon install instructions live.
+        var landing = "https://danielomazarino.github.io/Gsim-Masters-Presence-app/?logout=1";
+        var logoutUrl =
+          "https://accounts.google.com/Logout" +
+          "?continue=" + encodeURIComponent(landing) +
+          "&zx=" + Date.now();
+        window.location.replace(logoutUrl);
       }
 
       function confirmDeleteTraining() {

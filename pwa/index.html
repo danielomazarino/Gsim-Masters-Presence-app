@@ -92,9 +92,14 @@
       // First visit: show the landing card so the user can Add to Home Screen
       // while this page (and its icon) is the active one. Returning visit
       // (opened from the home-screen icon): redirect straight to the app.
+      // ?logout=1: the app just signed the user out — always show the card
+      // and reset the seen flag so the login/install flow can repeat.
       var seen = null;
       try { seen = localStorage.getItem("pwaSeen"); } catch (e) {}
-      if (params.get("open") === "1" || seen === "1") {
+      if (params.get("logout") === "1") {
+        try { localStorage.removeItem("pwaSeen"); } catch (e) {}
+        document.getElementById("openBtn").href = loginUrl;
+      } else if (params.get("open") === "1" || seen === "1") {
         window.location.replace(loginUrl);
       } else {
         try { localStorage.setItem("pwaSeen", "1"); } catch (e) {}
