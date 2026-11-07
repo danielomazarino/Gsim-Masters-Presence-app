@@ -37,53 +37,69 @@
         margin: 0 auto 20px;
         display: block;
       }
-      h1 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
-      p  { font-size: 14px; color: #475569; line-height: 1.5; margin-bottom: 24px; }
-      .open-btn {
-        display: inline-block;
-        width: 100%;
-        padding: 14px;
-        font-size: 16px;
-        font-weight: 600;
-        color: #ffffff;
-        background-color: #2563eb;
-        border: none;
+      h1 { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
+      .install {
+        font-size: 14px;
+        line-height: 1.6;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
         border-radius: 10px;
-        text-decoration: none;
-        -webkit-tap-highlight-color: transparent;
+        padding: 12px 14px;
+        margin-bottom: 24px;
+        text-align: left;
       }
-      .open-btn:active { background-color: #1d4ed8; }
-      .hint { display: block; margin-top: 16px; font-size: 12px; color: #94a3b8; }
+      .install ol { margin: 6px 0 0 20px; }
+      .openLink { font-size: 13px; color: #475569; margin-top: 20px; }
+      .openLink b { color: #2563eb; }
+      .hint { display: block; margin-top: 14px; font-size: 12px; color: #94a3b8; }
     </style>
   </head>
   <body>
     <div class="card">
       <img class="logo" src="icon-192.png" alt="Appikon">
       <h1>Träningsnärvaro</h1>
-      <p>
-        Appen öppnas i Google-appen du redan är inloggad i.
-      </p>
-      <p>
-        <strong>iPhone:</strong> Tryck nedan, sedan
-        <strong>Dela → Lägg till på hemskärmen</strong>.<br>
-        <strong>Android:</strong> Tryck nedan, sedan
-        <strong>⁝ → Lägg till på startskärmen</strong>.
-      </p>
-      <a class="open-btn" id="openBtn" href="#">Öppna appen</a>
-      <span class="hint">Du loggar in hos Google som vanligt — inget lösenord lagras här.</span>
+      <div class="install" id="install">
+        Installera appen på hemskärmen:
+      </div>
+      <span class="openLink" id="openLink">
+        Vill du bara använda appen nu? <a id="openBtn" href="#">Logga in</a>
+      </span>
+      <span class="hint">Inloggning sker hos Google som vanligt — inget lösenord lagras här.</span>
     </div>
     <script>
       // App URL is injected at deploy time by substituting %APP_URL%.
       var APP_URL = "%APP_URL%";
       var params = new URLSearchParams(window.location.search);
-      var target = params.get("open");
       var landing = APP_URL;
+
+      // Platform-specific, one-line install instruction
+      var ua = navigator.userAgent || "";
+      var steps;
+      if (/iPhone|iPad|iPod/i.test(ua)) {
+        steps =
+          "<li>Tryck på <strong>Dela</strong>-knappen (square med pil uppåt) i Safari nertill</li>" +
+          "<li>Välj <strong>Lägg till på hemskärmen</strong></li>" +
+          "<li>Tryck på <strong>Lägg till</strong> — appen installerar sig med ikonen ovan</li>";
+      } else if (/Android/i.test(ua)) {
+        steps =
+          "<li>Tryck på menyn <strong>⁝</strong> uppe till höger i Chrome</li>" +
+          "<li>Välj <strong>Lägg till på startskärmen</strong></li>" +
+          "<li>Bekräfta <strong>Installera</strong> — appen installeras med ikonen ovan</li>";
+      } else {
+        steps =
+          "<li>Öppna sidan i Safari (iPhone) eller Chrome (Android)</li>" +
+          "<li>Välj <strong>Lägg till på hem-/startskärmen</strong> i webbläsarens meny</li>";
+      }
+      document.getElementById("install").innerHTML =
+        "Installera appen på hemskärmen:" +
+        "<ol>" + steps + "</ol>";
+
       // First visit: show the landing card so the user can Add to Home Screen
       // while this page (and its icon) is the active one. Returning visit
       // (opened from the home-screen icon): redirect straight to the app.
       var seen = null;
       try { seen = localStorage.getItem("pwaSeen"); } catch (e) {}
-      if (target === "1" || seen === "1") {
+      if (params.get("open") === "1" || seen === "1") {
         window.location.replace(landing);
       } else {
         try { localStorage.setItem("pwaSeen", "1"); } catch (e) {}
