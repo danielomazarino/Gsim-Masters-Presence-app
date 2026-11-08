@@ -64,3 +64,25 @@ bara för att startkortet visas. iOS ger en hemskärmsapp en egen lagringsyta, s
 flagga satt i Safari skulle annars göra att första trycket på en ny ikon hamnade på
 Googles inloggningssida.
 
+### Accepterad avvägning: Google kan begära verifiering vid kallstart
+
+I en hemskärmsapp på iOS är sidans topp-origin `danielomazarino.github.io`. Då blir
+kakorna för `script.google.com` och `accounts.google.com` **tredjepartskakor**, som
+Safaris ITP blockerar. Öppnas appen i stället direkt på exec-URL:en är allt
+förstapartsdomän och sessionen håller kvar — men då blir ikonen en generisk
+systemikon i stället för GS-logotypen.
+
+Logotyp-ikonen prioriteras, så en kallstart kan landa på Googles sida
+"Verifiera att det är du" (samma reautentisering som gör att `clasp` inte fungerar
+för den här domänen). Det går inte att förhindra från wrappern: en statisk sida kan
+inte avgöra om Google-sessionen lever, eftersom alla mätmetoder blockeras.
+
+| Metod | Resultat |
+| --- | --- |
+| `fetch(exec)` | CORS, ingen `Access-Control-Allow-Origin` → `TypeError` |
+| `fetch(exec, {redirect:"manual"})` | `TypeError` — manuell redirect går inte att läsa mellan domäner |
+| `fetch(exec, {mode:"no-cors"})` | ogenomskinligt svar, `status: 0` i båda fallen |
+| dold `<iframe src=exec>` | `x-frame-options: SAMEORIGIN` på exec, `DENY` på inloggningssidan |
+
+Att logga in på nytt när Google begär det är alltså förväntat beteende, inte en bugg.
+
